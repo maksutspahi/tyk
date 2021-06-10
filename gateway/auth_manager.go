@@ -97,7 +97,16 @@ func (b *DefaultSessionManager) UpdateSession(keyName string, session *user.Sess
 	resetTTLTo int64, hashed bool) error {
 	defer b.clearCacheForKey(keyName, hashed)
 
-	v, err := json.Marshal(session)
+	orgSession := session
+
+	// Dont store access rights
+	// Useful when policy is used and no rate limiting applied
+	if config.Global().DisableStoreAccessRights {
+		orgSession := session.Clone()
+		orgSession.SetAccessRights(nil)
+	}
+
+	v, err := json.Marshal(orgSession)
 	if err != nil {
 		log.Error("Error marshalling session for sync update")
 		return err
